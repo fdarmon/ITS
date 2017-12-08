@@ -7,29 +7,11 @@ Created on Mon Dec  4 11:24:47 2017
 """
 import numpy as np
 
-class AbstractStudent:
+class Student():
     """
-    Abstract class that defines a student
+    Model of P and Q students (depending on lambdas parameters)
     """
-    def __init__(self,n_a,n_c):
-        self.n_a=n_a
-        self.n_c=n_c
-    
-    def exercize(self, activity):
-        """
-        Function called when an activity with parameters is proposed to the
-        student
-        """
-        assert(activity in np.arange(self.n_a))
-        return True
-    
-
-class Q_Student(AbstractStudent):
-    """
-    Model of Q student : student who can do any type of exercize if its
-    KC is high enough
-    """
-    def __init__(self,R_table,initKC,learning_rates,alpha,beta):
+    def __init__(self,R_table,initKC,learning_rates,alpha,beta,lambdas=None):
         """
         Params : 
             R_table : table of size n_a*n_c KC requirement for each activity
@@ -37,18 +19,24 @@ class Q_Student(AbstractStudent):
             learning_rates : Rate of learning for each KC
             alpha : KC update additive parameter
             beta : KC update multiplicative parameter
+            lambdas : lambda vector (constant to 1 if Q_student)
         """
-        super().__init__(n_a=R_table.shape[0],n_c=R_table.shape[1])
         self.R_table=R_table
         self.KC=initKC
         self.learning_rates=learning_rates
         self.alpha=alpha
         self.beta=beta
+        self.n_a=R_table.shape[0]
+        self.n_c=R_table.shape[1]
         
-    def exercize(self,activity):
-        super().exercize(activity)
+        # Define lambdas : size n_a, ponderation close to 0 for P student
+        if lambdas is None:
+            self.lambdas=np.ones((self.n_a,))
+        else:
+            self.lambdas=lambdas
         
-        success_probs=1/(1+np.exp(-self.beta*(self.KC-self.R_table[activity])-self.alpha))
+    def exercize(self,activity):        
+        success_probs=self.lambdas[activity]/(1+np.exp(-self.beta*(self.KC-self.R_table[activity])-self.alpha))
         success_prob=np.prod(success_probs)**(1/success_probs.shape[0])
         print(success_prob)
         success=np.random.uniform()<success_prob
