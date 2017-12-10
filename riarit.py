@@ -50,11 +50,10 @@ def compute_reward(a,answer, R_table,c_hat):
     reward = np.zeros(n_c)
     
     if (answer):
-        
-        reward = np.array([max(R_table[a,i]-c_hat[i],0) for i in range(n_c)])
+        reward = np.maximum(R_table[a,:]-c_hat,0)
     
     else :
-         reward = np.array([max(c_hat[i]-R_table[a,i],0) for i in range(n_c)])
+        reward = np.minimum(R_table[a,:]-c_hat,0)
     
     return reward
         
@@ -88,7 +87,8 @@ def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
     ### weights tracking how much rewards each activity is providing
     
     n_a, n_c = np.shape(R_table)
-    w_a = 0.1*np.ones(n_a) ### initialization with uniform weights
+    w_a = np.zeros((n_a,T)) ### initialization with uniform weights
+    w_a[:,0] = 0.1*np.ones(n_a)
     
     #### initialization of the student true competences (KC) 
     c_true = np.zeros((n_c,T))
@@ -96,14 +96,14 @@ def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
     
     ### initialization of the estimated competence 
     c_hat= np.zeros((n_c,T))
-    c_hat[:,0] = np.random.uniform(0.1,0.5,size=n_c)
+    c_hat[:,0] = 0.1*np.ones(n_c)
     
     
 
     
     for t in range(T-1):
         
-        a = choose_activity(w_a,gamma)
+        a = choose_activity(w_a[:,t],gamma)
         activity_list[t]=a
         
         ## return anwser of the student and update its true competence
@@ -113,16 +113,17 @@ def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
         r = compute_reward(a,answer,R_table,c_hat[:,t])
         
         ## use the computed rewards to update the estimation of competence
-        c_hat[:,t+1] = c_hat[:,t+1] + alpha_c_hat*r
+        c_hat[:,t+1] = c_hat[:,t] + alpha_c_hat*r
         
         
         ## update the weights w
-        w_a = beta_w*w_a +eta_w*np.sum(r)
+        w_a[:,t+1]=w_a[:,t]
+        w_a[a,t+1] = np.clip(beta_w*w_a[a,t] +eta_w*np.sum(r),0,1)
         
         reward_list[t]= np.sum(r)
         
     
-    return reward_list[:-1],activity_list[:-1],c_hat,c_true
+    return reward_list[:-1],activity_list[:-1],c_hat,c_true,w_a
         
         
         

@@ -37,8 +37,8 @@ class Student():
         
     def exercize(self,activity):        
         success_probs=self.lambdas[activity]/(1+np.exp(-self.beta*(self.KC-self.R_table[activity])-self.alpha))
-        success_prob=np.prod(success_probs)**(1/success_probs.shape[0])
-        print(success_prob)
+        success_prob=np.prod(success_probs)**(1./success_probs.shape[0])
+        #print(success_prob)
         success=np.random.uniform()<success_prob
         
         if success:
@@ -50,7 +50,6 @@ class Student():
         """
         Update each KC when the activity was a success 
         """
-        print(self.R_table[activity])
         self.KC=self.KC+self.learning_rates*\
                 np.maximum(self.R_table[activity]-self.KC,0)
         
