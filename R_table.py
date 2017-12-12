@@ -23,9 +23,8 @@ class R_table():
         self.n_a=[table.shape[0] for table in list_tables] # list of possible values for each parameters
             
     def get_KCVector(self,activity):
-
         assert(activity.shape==(self.n_p,))
-        p=np.ones(self.n_p)
+        p=np.ones(self.n_c)
         for i in range(self.n_p):
             p=p*self.list_tables[i][activity[i],:]
             

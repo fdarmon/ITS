@@ -36,6 +36,7 @@ class Student():
         self.beta=beta
         self.n_a_list=R_table_model.n_a
         self.n_c=R_table_model.n_c
+        self.n_p=R_table_model.n_p
         
 
         
@@ -43,6 +44,7 @@ class Student():
         """
         Activity must be a numpy array of shape (n_p,)
         """
+        assert(activity.shape==(self.n_p,))
         q=self.R_table_model.get_KCVector(activity)
         success_probs=self.get_lambdas(activity)/(1+np.exp(-self.beta*(self.KC-q)-self.alpha))
         success_prob=np.prod(success_probs)**(1./success_probs.shape[0])

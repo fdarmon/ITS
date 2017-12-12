@@ -18,7 +18,7 @@ def choose_activity(w_a_list,gamma):
      gamma : exploration parameter
     
         Returns :
-     a : vector of activity chosen 
+     a : vector of activity chosen size n_p
     """
     res=[]
     for w_a in w_a_list:
@@ -34,7 +34,7 @@ def choose_activity(w_a_list,gamma):
         else :
             res.append(np.random.choice(n_a, p = w_a))
     
-        return(np.array(res))
+    return(np.array(res))
     
 def compute_reward(a,answer, R_table_model,c_hat):
     
@@ -126,11 +126,9 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
         
         
         ## update the weights w
-        new_w_a=w_a
 
         for i in range(n_p):
-            new_w_a[i][a[i]] = np.clip(beta_w*w_a[i][a[i]] +eta_w*np.sum(r),0,1)
-        w_a=new_w_a
+            w_a[i][a[i]] = np.clip(beta_w*w_a[i][a[i]] +eta_w*np.sum(r),0,1)
         w_a_history.append(w_a)
         
         reward_list[t]= np.sum(r)
