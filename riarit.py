@@ -7,38 +7,41 @@ This is a temporary script file.
 
 import numpy as np
 from numpy import random
+from R_table import R_table
 
 
 
-
-def choose_activity(w_a,gamma):
+def choose_activity(w_a_list,gamma):
     
     """Parameters :
-     w_a : recent rewards provided by each activity
+     w_a_list : list of n_p vectors recent rewards provided by each activity
      gamma : exploration parameter
     
         Returns :
-     a : index of activity chosen 
+     a : vector of activity chosen 
     """
-    n_a = np.size(w_a)
-    w_a = (1./np.sum(w_a))*w_a ## normalize the weights 
+    res=[]
+    for w_a in w_a_list:
+        n_a = np.size(w_a)
+        w_a = (1./np.sum(w_a))*w_a ## normalize the weights 
+        
+        ### gamma-greedy exploration policy i.e explore with proba gamma and 
+        ### exploit with proba 1-gamma.
+        
+        if (np.random.binomial(1,gamma)==1):
+            res.append(np.random.choice(n_a))
+        
+        else :
+            res.append(np.random.choice(n_a, p = w_a))
     
-    ### gamma-greedy exploration policy i.e explore with proba gamma and 
-    ### exploit with proba 1-gamma.
+        return(np.array(res))
     
-    if (np.random.binomial(1,gamma)==1):
-        return np.random.choice(n_a)
-    
-    else :
-        return np.random.choice(n_a, p = w_a)
-    
-    
-def compute_reward(a,answer, R_table,c_hat):
+def compute_reward(a,answer, R_table_model,c_hat):
     
     """ Parameters :
-    # activity a which was proposed
+    # activity vector a which was proposed
     # answer given by the student
-    # R_table
+    # R_table_model
     # c_hat : most recent estimated competences
     
        Returns :
@@ -46,14 +49,13 @@ def compute_reward(a,answer, R_table,c_hat):
     for the activity a, i.e estimated progress on each competence provided
     by activity a.
     """
-    n_c = np.shape(R_table)[1]
+    n_c = R_table_model.n_c
     reward = np.zeros(n_c)
-    
     if (answer):
-        reward = np.maximum(R_table[a,:]-c_hat,0)
+        reward = np.maximum(R_table_model.get_KCVector(a)-c_hat,0)
     
     else :
-        reward = np.minimum(R_table[a,:]-c_hat,0)
+        reward = np.minimum(R_table_model.get_KCVector(a)-c_hat,0)
     
     return reward
         
@@ -61,7 +63,7 @@ def compute_reward(a,answer, R_table,c_hat):
     
  
     
-def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
+def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     
     """Parameters:
     
@@ -80,16 +82,23 @@ def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
     
     """
     
-    reward_list = -1*np.ones(T)
-    
-    activity_list = -1*np.ones(T)
+
     
     ### weights tracking how much rewards each activity is providing
     
-    n_a, n_c = np.shape(R_table)
-    w_a = np.zeros((n_a,T)) ### initialization with uniform weights
-    w_a[:,0] = 0.1*np.ones(n_a)
+    n_c=R_table_model.n_c
+    n_p=R_table_model.n_p
+    n_a_list=R_table_model.n_a
     
+    reward_list = -1*np.ones(T)
+    activity_list = -1*np.ones((T,n_p))
+    
+    
+    w_a=[] # list of n_p vector of size (n_a_list[i])
+    for n_a in n_a_list:
+        w_a.append(0.1*np.ones((n_a))) ### initialization with constant weights
+    
+    w_a_history=[w_a]
     #### initialization of the student true competences (KC) 
     c_true = np.zeros((n_c,T))
     c_true[:,0]=student.KC
@@ -103,27 +112,31 @@ def Riarit(student,T,R_table,beta_w,eta_w,alpha_c_hat,gamma):
     
     for t in range(T-1):
         
-        a = choose_activity(w_a[:,t],gamma)
-        activity_list[t]=a
+        a = choose_activity(w_a,gamma)
+        activity_list[t,:]=a
         
         ## return anwser of the student and update its true competence
         answer = student.exercize(a) 
         c_true[:,t+1]=student.KC
     
-        r = compute_reward(a,answer,R_table,c_hat[:,t])
+        r = compute_reward(a,answer,R_table_model,c_hat[:,t])
         
         ## use the computed rewards to update the estimation of competence
         c_hat[:,t+1] = c_hat[:,t] + alpha_c_hat*r
         
         
         ## update the weights w
-        w_a[:,t+1]=w_a[:,t]
-        w_a[a,t+1] = np.clip(beta_w*w_a[a,t] +eta_w*np.sum(r),0,1)
+        new_w_a=w_a
+
+        for i in range(n_p):
+            new_w_a[i][a[i]] = np.clip(beta_w*w_a[i][a[i]] +eta_w*np.sum(r),0,1)
+        w_a=new_w_a
+        w_a_history.append(w_a)
         
         reward_list[t]= np.sum(r)
         
     
-    return reward_list[:-1],activity_list[:-1],c_hat,c_true,w_a
+    return reward_list[:-1],activity_list[:-1],c_hat,c_true,w_a_history
         
         
         
