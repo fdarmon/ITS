@@ -29,3 +29,25 @@ class R_table():
             p=p*self.list_tables[i][activity[i],:]
             
         return(p)
+        
+    def enumerate_activities(self):
+        return(self.enum_recursion(self.n_a).astype('int'))
+        
+    def enum_recursion(self,list_n_a):
+        """
+        utils
+        """
+
+        if len(list_n_a)==1:
+            return np.arange(list_n_a[0])[:,None]
+        
+            
+        else:
+            last_recurs=self.enum_recursion(list_n_a[:-1])
+            dim=last_recurs.shape
+            res=np.zeros((dim[0]*list_n_a[-1],dim[1]+1))
+            for j in range(list_n_a[-1]):
+                res[j*dim[0]:(j+1)*dim[0],-1]=j
+                res[j*dim[0]:(j+1)*dim[0],:-1]=last_recurs
+                
+            return(res)

@@ -46,20 +46,19 @@ eta_w = 0.2 ## learning rate for w_a
 
 student = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 
-reward_list,activity_list,c_hat,c_true,w_a_history = \
+reward_list,regret_list,activity_list,c_hat,c_true,w_a_history = \
         riarit.Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
 
-for c in range(n_c):
-    plt.figure()
-    plt.plot(c_true[c,:])
-    plt.plot(c_hat[c,:])
-    
-plt.figure()
-#for a in range(n_a):
-    
-#    plt.plot(w_a[a,:])
-    
-    
+#for c in range(n_c):
+#    plt.figure()
+#    plt.plot(c_true[c,:])
+#    plt.plot(c_hat[c,:])
     
 
+#plt.figure()
+#for a in range(n_a):
+#    plt.plot(w_a_history[0][a,:])
+#    
+#plt.show()
+    
 

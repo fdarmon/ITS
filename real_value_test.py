@@ -26,7 +26,7 @@ cents_notation=np.array([[0.8,1,1,1,1,1],
     [0.9,1,1,1,1,1]])
 
 money_type=np.array([[1,1,1,0.9,0.9,1],
-    [0.1,-1,-1,1,1,1]]) # 1 for not relevent value (will be ignored in the R_table)
+    [0.1,1,1,1,1,1]]) # 1 for not relevent value (will be ignored in the R_table)
 
 
 
@@ -54,20 +54,31 @@ beta_w = 1 ## coefficient of the previous value w_a
 eta_w = 0.2 ## learning rate for w_a
         
 
-student = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+student1 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+student2 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 
-reward_list,activity_list,c_hat,c_true,w_a_history = \
-        riarit.Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
 
+
+reward_list_random,_,_,_,_,_ = \
+    riarit.Riarit(student2,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
+
+
+reward_list,regret_list,activity_list,c_hat,c_true,w_a_history = \
+        riarit.Riarit(student1,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
+# %%
 for c in range(n_c):
     plt.figure()
-    plt.plot(c_true[c,:])
-    plt.plot(c_hat[c,:])
+    plt.plot(c_true[c,:],label="Real Riarit")
+    plt.plot(c_hat[c,:],label="Estimated for riarit")
+    plt.plot()
+    plt.legend()
     
+cumulative_reward=np.cumsum(reward_list)
 plt.figure()
-
-    
-    
+plt.plot(regret_list+cumulative_reward,label="Optimal")
+plt.plot(cumulative_reward,label="Riarit")
+plt.plot(np.cumsum(reward_list_random))
+plt.legend()
     
 
 

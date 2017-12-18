@@ -17,7 +17,7 @@ class Student():
         Params : 
             R_table_model : 
                 KC requirement for each activity (R_table object)
-
+        
             initKC : 
                 Initial KC values
             learning_rates : 
@@ -38,32 +38,51 @@ class Student():
         self.n_c=R_table_model.n_c
         self.n_p=R_table_model.n_p
         
+        self.possible_activities=R_table_model.enumerate_activities()
 
         
     def exercize(self,activity):    
+        
+        success_prob,q=self.prob_success(activity)
+        #print(success_prob)
+        success=np.random.uniform()<success_prob
+        
+        if success: # update KC
+            self.KC=self.KC+self.learning_rates*\
+            np.maximum(q-self.KC,0)
+    
+        return success
+    
+    def prob_success(self,activity):
         """
         Activity must be a numpy array of shape (n_p,)
+        returns success_probs and expected reward
         """
         assert(activity.shape==(self.n_p,))
         q=self.R_table_model.get_KCVector(activity)
         success_probs=self.get_lambdas(activity)/(1+np.exp(-self.beta*(self.KC-q)-self.alpha))
         success_prob=np.prod(success_probs)**(1./success_probs.shape[0])
-        #print(success_prob)
-        success=np.random.uniform()<success_prob
         
-        if success:
-            self.update_KC(q)
-        
-        return success
-        
-    def update_KC(self,q):
-        """
-        Update each KC when the activity was a success 
-        q of shape(n_p,) requirement of the activity for each KC
-        """
-        self.KC=self.KC+self.learning_rates*\
-                np.maximum(q-self.KC,0)
+        return success_prob,q
+
         
     def get_lambdas(self,activity):
         # TODO
         return 1
+    
+    def get_best_activity(self):
+        """
+        Returns the best activity in terms of expected reward and its expected reward
+        """
+        current_max=-float("inf")
+        
+        
+        for activity in self.possible_activities:
+            success_prob,q =self.prob_success(activity)
+            expected_reward=success_prob*np.sum(np.maximum(q-self.KC,0))+\
+                (1-success_prob)*np.sum((np.minimum(q-self.KC,0)))
+            if expected_reward > current_max:
+                current_max = expected_reward
+                best_activity = activity
+            
+        return best_activity, current_max

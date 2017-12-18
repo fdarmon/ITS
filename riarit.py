@@ -92,7 +92,7 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     
     reward_list = -1*np.ones(T)
     activity_list = -1*np.ones((T,n_p))
-    
+    regret_list=-1*np.ones(T)
     
     w_a=[] # list of n_p vector of size (n_a_list[i])
     for n_a in n_a_list:
@@ -111,14 +111,13 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
 
     
     for t in range(T-1):
-        
         a = choose_activity(w_a,gamma)
         activity_list[t,:]=a
         
         ## return anwser of the student and update its true competence
         answer = student.exercize(a) 
         c_true[:,t+1]=student.KC
-    
+        
         r = compute_reward(a,answer,R_table_model,c_hat[:,t])
         
         ## use the computed rewards to update the estimation of competence
@@ -131,10 +130,12 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
             w_a[i][a[i]] = np.clip(beta_w*w_a[i][a[i]] +eta_w*np.sum(r),0,1)
         w_a_history.append(w_a)
         
-        reward_list[t]= np.sum(r)
-        
+        rew=np.sum(r)
+        reward_list[t+1]= rew
+        regret_list[t+1]=regret_list[t]+student.get_best_activity()[1]-rew
+
     
-    return reward_list[:-1],activity_list[:-1],c_hat,c_true,w_a_history
+    return reward_list[:-1],regret_list[:-1],activity_list[:-1],c_hat,c_true,w_a_history
         
         
         
