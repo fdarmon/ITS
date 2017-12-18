@@ -54,11 +54,7 @@ def ZPD(c_hat):
     zpd = np.array([difficulty,presentation,2,2])
              
     return zpd
-             
             
-    
-    
-    
     
     
 
@@ -151,8 +147,9 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     
     w_a=[] # list of n_p vector of size (n_a_list[i])
     for n_a in n_a_list:
-        w_a.append(0.1*np.ones((n_a))) ### initialization with constant weights
-    
+        w_a.append(0.2*np.ones((n_a))) ### initialization with constant weights
+       # w_a.append(np.random.uniform(0.1,0.3,n_a))
+        
     w_a_history=[w_a]
     #### initialization of the student true competences (KC) 
     c_true = np.zeros((n_c,T))
@@ -162,11 +159,12 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     c_hat= np.zeros((n_c,T))
     c_hat[:,0] = 0.1*np.ones(n_c)
     
-    zpd = np.array([0,0,1,1])
+    zpd = np.array([1,1,2,2])
 
     
     for t in range(T-1):
         
+        #print w_a_history
         a = choose_activity(w_a,gamma,zpd)
         activity_list[t,:]=a
         
@@ -186,7 +184,10 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
 
         for i in range(n_p):
             w_a[i][a[i]] = np.clip(beta_w*w_a[i][a[i]] +eta_w*np.sum(r),0,1)
+            w_a[i][a[i]]=max(0,w_a[i][a[i]])
         w_a_history.append(w_a)
+        
+        
         
         rew=np.sum(r)
         reward_list[t+1]= rew
