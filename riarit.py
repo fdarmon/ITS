@@ -11,20 +11,75 @@ from R_table import R_table
 
 
 
-def choose_activity(w_a_list,gamma):
+def ZPD(c_hat):
+     
+    """Parameters :
+    c_hat : list of estimated competence of size n_C
+    
+        Returns :
+     zpd : vector of size n_p, each element represents the maximal index 
+     of parameter value that can be chosen to form an activity depending
+     on the estimated competences of the student
+     """
+    
+    
+    ### maximum level of difficulty that can be proposed 
+    difficulty=1
+    
+    if (c_hat[1]>0.25):
+        difficulty=2
+        
+        if (c_hat[1]>0.4):
+            difficulty=3
+            
+            if (c_hat[2]>0.4):
+                difficulty=4
+                
+                if (c_hat[3]>0.3):
+                    difficulty=5
+                
+                    if (c_hat[3]>0.5):
+                        difficulty=6
+    
+    ### maximum level of presentation that can be proposed
+    ## level 0: spoken and written, level 1: written, level 2 :spoken 
+    presentation=1
+    
+    if (c_hat[-1]>0.05):
+        presentation=2
+        
+        if (c_hat[-1]>0.1):
+            presentation=3
+             
+    zpd = np.array([difficulty,presentation,2,2])
+             
+    return zpd
+             
+            
+    
+    
+    
+    
+    
+
+def choose_activity(w_a_list,gamma,zpd):
     
     """Parameters :
      w_a_list : list of n_p vectors recent rewards provided by each activity
      gamma : exploration parameter
-    
+    zpd : array of indices that set the eligible parameters values
+        
         Returns :
      a : vector of activity chosen size n_p
     """
     res=[]
+    i=0
     for w_a in w_a_list:
+        
+        w_a = w_a[:zpd[i]]
         n_a = np.size(w_a)
         w_a = (1./np.sum(w_a))*w_a ## normalize the weights 
-        
+        i+=1
         ### gamma-greedy exploration policy i.e explore with proba gamma and 
         ### exploit with proba 1-gamma.
         
@@ -107,11 +162,12 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     c_hat= np.zeros((n_c,T))
     c_hat[:,0] = 0.1*np.ones(n_c)
     
-    
+    zpd = np.array([0,0,1,1])
 
     
     for t in range(T-1):
-        a = choose_activity(w_a,gamma)
+        
+        a = choose_activity(w_a,gamma,zpd)
         activity_list[t,:]=a
         
         ## return anwser of the student and update its true competence
@@ -123,6 +179,8 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
         ## use the computed rewards to update the estimation of competence
         c_hat[:,t+1] = c_hat[:,t] + alpha_c_hat*r
         
+        # update zpd
+        zpd = ZPD(c_hat[:,t+1])
         
         ## update the weights w
 
@@ -138,12 +196,13 @@ def Riarit(student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma):
     return reward_list[:-1],regret_list[:-1],activity_list[:-1],c_hat,c_true,w_a_history
         
         
-        
+
 
 
         
     
-    
+#c_hat=np.array([0.5,0.5,0.3,0.4,0.1,0.07])
+#print ZPD(c_hat)
     
     
 
