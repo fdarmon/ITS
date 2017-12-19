@@ -10,6 +10,7 @@ import student
 import riarit
 from matplotlib import pyplot as plt
 from R_table import R_table
+import baselines
 
 ex_type=np.array([[0.7,0.4,0,0,0,0.5],
     [0.7,0.6,0.3,0,0,0.5],
@@ -56,10 +57,11 @@ eta_w = 0.2 ## learning rate for w_a
 
 student1 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 student2 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+student3 =  student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 
+activity_list_seq,c_true_seq,answers_list_seq = baselines.predefined_sequence(student3,R_table_model,T)
 
-
-reward_list_random,_,_,_,_,_ = \
+reward_list_random,_,_,_,c_true_random,_ = \
     riarit.Riarit(student2,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
 
 
@@ -68,8 +70,10 @@ reward_list,regret_list,activity_list,c_hat,c_true,w_a_history = \
 # %%
 for c in range(n_c):
     plt.figure()
-    plt.plot(c_true[c,:],label="Real Riarit")
-    plt.plot(c_hat[c,:],label="Estimated for riarit")
+    plt.plot(c_true[c,:],label="True progress for Riarit")
+    plt.plot(c_hat[c,:],label="Estimated progress for riarit")
+    #plt.plot(c_true_random[c,:],label='True progress for Random')
+    plt.plot(c_true_seq[c,:],label='True progress for predefined sequence')
     plt.plot()
     plt.legend()
     
