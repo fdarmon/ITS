@@ -11,6 +11,7 @@ from R_table import R_table
 
 
 
+
 def predefined_sequence(student,R_table_model,T):
     
     
@@ -46,7 +47,9 @@ def predefined_sequence(student,R_table_model,T):
             
         answer_list[stage].append(answer)
         
-        ### policy to move to the next stage 
+        ### policy to move to the next stage
+        ### depends on the previous results of the student
+        
         if (stage <= 4):
             if (len(answer_list[stage])>=2 and sum(answer_list[stage][-2:])==2):
                 stage+=1

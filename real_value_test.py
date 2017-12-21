@@ -58,30 +58,37 @@ eta_w = 0.2 ## learning rate for w_a
 student1 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 student2 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 student3 =  student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+student4 =  student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
 
 activity_list_seq,c_true_seq,answers_list_seq = baselines.predefined_sequence(student3,R_table_model,T)
 
-reward_list_random,_,_,_,c_true_random,_ = \
+reward_list_random,_,_,_,c_true_random,_,_ = \
     riarit.Riarit(student2,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
 
 
-reward_list,regret_list,activity_list,c_hat,c_true,w_a_history = \
+reward_list,regret_list,activity_list,c_hat,c_true,w_a_history, best_activity_list= \
         riarit.Riarit(student1,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
-# %%
+
+reward_list_3,activity_list_3,c_hat_3,c_true_3,w_a_history_3 = \
+        riarit.Exp3(student4,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
+
 for c in range(n_c):
     plt.figure()
     plt.plot(c_true[c,:],label="True progress for Riarit")
     plt.plot(c_hat[c,:],label="Estimated progress for riarit")
-    #plt.plot(c_true_random[c,:],label='True progress for Random')
+    plt.plot(c_true_random[c,:],label='True progress for Random')
     plt.plot(c_true_seq[c,:],label='True progress for predefined sequence')
-    plt.plot()
+    plt.plot(c_true_3[c,:],label='True progress for Exp3')
+    plt.plot(c_hat_3[c,:],label="Estimated progress for Exp3")
+    
     plt.legend()
     
 cumulative_reward=np.cumsum(reward_list)
 plt.figure()
 plt.plot(regret_list+cumulative_reward,label="Optimal")
 plt.plot(cumulative_reward,label="Riarit")
-plt.plot(np.cumsum(reward_list_random))
+plt.plot(np.cumsum(reward_list_random),label='Random')
+plt.plot(np.cumsum(reward_list_3),label='Exp3')
 plt.legend()
     
 
