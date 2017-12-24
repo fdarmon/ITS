@@ -30,6 +30,7 @@ class Student():
                 lambda vector (constant to 1 if Q_student)
         """
         self.R_table_model=R_table_model
+        self.initKC=initKC
         self.KC=initKC
         self.learning_rates=learning_rates
         self.alpha=alpha
@@ -86,3 +87,6 @@ class Student():
                 best_activity = activity
             
         return best_activity, current_max
+    
+    def reset(self):
+        self.KC=self.initKC

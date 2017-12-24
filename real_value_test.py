@@ -33,8 +33,7 @@ money_type=np.array([[1,1,1,0.9,0.9,1],
 
 #### Set parameters ######
         
-T = 1000 # number of rounds
-nb_simu = 100 # number of simulations
+T = 150 # number of rounds
 n_c = 6 # KnowMoney IntSum IntDec DecSum DecDec Memory 
 
 gamma = 0.1
@@ -43,8 +42,8 @@ alpha_c_hat = 0.1
 
 R_table_model=R_table([ex_type,price_presentation,cents_notation,money_type])
 initKC = np.zeros(n_c)
-
-learning_rates = np.random.uniform(low =0.05,high =0.1,size=n_c)
+n_p=R_table_model.n_p
+learning_rates = np.random.uniform(low =0.1,high =0.15,size=n_c)
 
 
 success_prob=0.8 # probability of sucess when KC=R_table
@@ -53,43 +52,94 @@ beta = 7
 
 beta_w = 1 ## coefficient of the previous value w_a
 eta_w = 0.2 ## learning rate for w_a
-        
+ 
+# %% Evaluation of w_a_history
+def gen_w_a_iter(current_student,method):
+    if method == "Random":
+        reward_list,_,activity_list,_,c_true,w_a_history = \
+            riarit.Exp3(current_student,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
 
-student1 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
-student2 = student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
-student3 =  student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
-student4 =  student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+    elif method == 'Riarit':
+        reward_list,_,activity_list,_,c_true,w_a_history = \
+            riarit.Exp3(current_student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
 
-activity_list_seq,c_true_seq,answers_list_seq = baselines.predefined_sequence(student3,R_table_model,T)
+    else:
+        return
+    
+    return w_a_history
 
-reward_list_random,_,_,_,c_true_random,_,_ = \
-    riarit.Riarit(student2,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
+to_test=["Random","Riarit"]
+w_a_mean={method : None for method in to_test}
+n_itr=50
+T=500
+for i in range(n_itr):
+    for method in to_test:
+        current_student=student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+        w_a_history=gen_w_a_iter(current_student,method)
+        if w_a_mean[method] is None:
+            w_a_mean[method]=w_a_history
+        for j in range(n_p):
+            w_a_mean[method][j]=w_a_mean[method][j]+w_a_history[j]/n_itr
 
+# %% Plot the average interest for parameter 0 : exercize type
+plt.figure()
+plt.plot(w_a_mean["Random"][0])
+plt.legend(["{}".format(i) for i in range(R_table_model.n_a[0])])
+            
+# %% Plot the evolution of competences  for one student 
+def gen_progresses_iter(current_student,method):
+    """
+    Generate one iteration of giving T activity to one student with method
+    returns the KC of the student function of time
 
-reward_list,regret_list,activity_list,c_hat,c_true,w_a_history, best_activity_list= \
-        riarit.Riarit(student1,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
+    """
+    if method == "Predefined sequence":
+        activity_list,c_true,_ = \
+            baselines.predefined_sequence(current_student,R_table_model,T)
 
-reward_list_3,activity_list_3,c_hat_3,c_true_3,w_a_history_3 = \
-        riarit.Exp3(student4,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
+    elif method == "Random":
+        reward_list,_,activity_list,_,c_true,_ = \
+            riarit.Exp3(current_student,T,R_table_model,beta_w,eta_w,alpha_c_hat,1)
+
+    elif method == 'Riarit':
+        reward_list,_,activity_list,_,c_true,_ = \
+            riarit.Exp3(current_student,T,R_table_model,beta_w,eta_w,alpha_c_hat,gamma)
+
+    else:
+        return
+    
+    return c_true
+      
+n_itr=50
+methods=["Predefined sequence","Random","Riarit"]
+true_KC = {method : None for method in methods}
+activities = {method : None for method in methods}
+for i in range(n_itr):
+    for method in methods:
+        current_student=student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+        KC_iter=gen_progresses_iter(current_student,method)
+        if true_KC[method] is None:
+            true_KC[method]=KC_iter/n_itr
+        else:
+            true_KC[method]=true_KC[method]+KC_iter/n_itr
 
 for c in range(n_c):
     plt.figure()
-    plt.plot(c_true[c,:],label="True progress for Riarit")
-    plt.plot(c_hat[c,:],label="Estimated progress for riarit")
-    plt.plot(c_true_random[c,:],label='True progress for Random')
-    plt.plot(c_true_seq[c,:],label='True progress for predefined sequence')
-    plt.plot(c_true_3[c,:],label='True progress for Exp3')
-    plt.plot(c_hat_3[c,:],label="Estimated progress for Exp3")
-    
+    for method in methods:
+        plt.plot(true_KC[method][c],label=method)
+        
     plt.legend()
-    
-cumulative_reward=np.cumsum(reward_list)
+    plt.title("Evolution of competence level {} for several methods".format(c))
+
+# %%
+"""
+cumulative_reward=np.cumsum(reward_list_3)
 plt.figure()
-plt.plot(regret_list+cumulative_reward,label="Optimal")
-plt.plot(cumulative_reward,label="Riarit")
-plt.plot(np.cumsum(reward_list_random),label='Random')
+plt.plot(regret_list_3+cumulative_reward,label="Optimal")
+
 plt.plot(np.cumsum(reward_list_3),label='Exp3')
+plt.title("Cumulative reward")
 plt.legend()
-    
+"""   
 
 

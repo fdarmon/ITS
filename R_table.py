@@ -21,7 +21,8 @@ class R_table():
         self.n_p=len(list_tables)
         self.n_c=list_tables[0].shape[1]
         self.n_a=[table.shape[0] for table in list_tables] # list of possible values for each parameters
-            
+        self.enumerated=self.enum_recursion(self.n_a).astype('int')    
+        
     def get_KCVector(self,activity):
         assert(activity.shape==(self.n_p,))
         p=np.ones(self.n_c)
@@ -31,7 +32,7 @@ class R_table():
         return(p)
         
     def enumerate_activities(self):
-        return(self.enum_recursion(self.n_a).astype('int'))
+        return(self.enumerated)
         
     def enum_recursion(self,list_n_a):
         """
