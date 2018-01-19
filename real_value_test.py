@@ -33,26 +33,51 @@ money_type=np.array([[1,1,1,0.9,0.9,1],
 
 #### Set parameters ######
         
-T = 150 # number of rounds
+T = 50 # number of rounds
 n_c = 6 # KnowMoney IntSum IntDec DecSum DecDec Memory 
 
-gamma = 0.1
+gamma = 0.2
 
 alpha_c_hat = 0.1
 
 R_table_model=R_table([ex_type,price_presentation,cents_notation,money_type])
-initKC = np.zeros(n_c)
+initKC = 0.7*np.ones(n_c)
+initKC=np.clip(np.random.normal(loc=0.15,scale = 0.15,size=n_c),0,1)
 n_p=R_table_model.n_p
-learning_rates = np.random.uniform(low =0.1,high =0.15,size=n_c)
+learning_rates = np.random.uniform(low =0.02,high =0.4,size=n_c)
 
 
-success_prob=0.8 # probability of sucess when KC=R_table
+success_prob=0.95 # probability of sucess when KC=R_table
 alpha=np.log(success_prob/(1-success_prob))
-beta = 7
+beta = 8
 
 beta_w = 1 ## coefficient of the previous value w_a
 eta_w = 0.2 ## learning rate for w_a
- 
+
+current_student=student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+reward_list,_,activity_list,c_hat,c_true,w_a_history,best_activity_list,correct_answers = \
+            riarit.Exp3(current_student,T,R_table_model,alpha_c_hat,gamma,compute_regret=True)
+
+current_student=student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+reward_list_r,_,activity_list_r,c_hat_r,c_true_r,w_a_history_r,best_activity_list,_ = \
+            riarit.Exp3(current_student,T,R_table_model,alpha_c_hat,1,compute_regret=False)
+
+current_student=student.Student(R_table_model,initKC,learning_rates,alpha,beta,lambdas=None)
+correct_ans = baselines.predefined_sequence(current_student,R_table_model,T)[-1]
+
+for i in range(5,6):
+    plt.plot(c_true[i,:],label='exp3')
+    plt.plot(c_true_r[i,:],label='random')
+    plt.xlim((0,100))
+    plt.legend()
+    plt.show()
+
+plt.plot(np.cumsum(reward_list),label='exp3')
+plt.plot(np.cumsum(reward_list_r),label='random')
+plt.legend()
+plt.show()
+
+"""
 # %% Evaluation of w_a_history
 def gen_w_a_iter(current_student,method):
     if method == "Random":
@@ -88,11 +113,11 @@ plt.legend(["{}".format(i) for i in range(R_table_model.n_a[0])])
             
 # %% Plot the evolution of competences  for one student 
 def gen_progresses_iter(current_student,method):
-    """
-    Generate one iteration of giving T activity to one student with method
-    returns the KC of the student function of time
+    
+    #Generate one iteration of giving T activity to one student with method
+    #returns the KC of the student function of time
 
-    """
+    
     if method == "Predefined sequence":
         activity_list,c_true,_ = \
             baselines.predefined_sequence(current_student,R_table_model,T)
@@ -130,7 +155,7 @@ for c in range(n_c):
         
     plt.legend()
     plt.title("Evolution of competence level {} for several methods".format(c))
-
+"""
 # %%
 """
 cumulative_reward=np.cumsum(reward_list_3)

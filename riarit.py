@@ -68,7 +68,7 @@ def compute_reward(a,answer, R_table_model,c_hat):
     reward = np.zeros(n_c)
     if (answer):
         reward = np.maximum(R_table_model.get_KCVector(a)-c_hat,0)
-    
+        #print R_table_model.get_KCVector(a)
     else :
         reward = np.minimum(R_table_model.get_KCVector(a)-c_hat,0)
     
@@ -161,10 +161,13 @@ def Exp3(student,T,R_table_model,alpha_c_hat,gamma,compute_regret=False):
     
     ### initialization of the estimated competence 
     c_hat= np.zeros((n_c,T))
-    c_hat[:,0] = 0.1*np.ones(n_c)
-    
+    c_hat[:,0] = 0.5*np.ones(n_c)
+    #c_hat[:,0] = np.random.uniform(low=0,high=0.5,size=n_c)
+    #c_hat[:,0] = np.zeros(n_c)
     zpd = np.array([1,1,2,2])
 
+    best_activity_list=[]
+    correct_answers = 0
     
     for t in range(T):
         
@@ -174,6 +177,7 @@ def Exp3(student,T,R_table_model,alpha_c_hat,gamma,compute_regret=False):
         ## return anwser of the student and update its true competence
         answer = student.exercize(a) 
         c_true[:,t]=student.KC
+        correct_answers += 1*(answer)
         
         r = compute_reward(a,answer,R_table_model,c_hat[:,t])
         ## update rewards
@@ -182,15 +186,18 @@ def Exp3(student,T,R_table_model,alpha_c_hat,gamma,compute_regret=False):
         reward_list[t]= rew
         if compute_regret:
             best_activity,best_reward=student.get_best_activity()
+            best_activity_list.append(best_activity)
         else:
             best_activity=0
             best_reward=0
-        if t==0:
+        if (t==0):
             regret_list[0]=best_reward-rew
-            c_hat[:,0]=alpha_c_hat*r
+           
         else:
             regret_list[t]=regret_list[t-1]+best_reward-rew
-            c_hat[:,t] = c_hat[:,t-1] + alpha_c_hat*r
+        
+        if (t<=T-2):
+            c_hat[:,t+1] = c_hat[:,t] + alpha_c_hat*r
             
         # update zpd
         zpd = ZPD(c_hat[:,t])
@@ -205,9 +212,12 @@ def Exp3(student,T,R_table_model,alpha_c_hat,gamma,compute_regret=False):
             
             ## use importance weight trick to estimate rewards
             r_hat = rew/winner_prob[i]
-
+            
             w_a[i][a[i]] = w_a[i][a[i]]*np.exp(gamma*r_hat)
             w_a[i] = (1./np.sum(w_a[i]))*w_a[i] ## normalize the weights to avoid explosion 
+            
+            w_a[i] = np.maximum(w_a[i],10**(-5)*np.ones(n_a_list[i]))
+            w_a[i] = (1./np.sum(w_a[i]))*w_a[i]
             w_a_history[i][t,:]=w_a[i]
             
         
@@ -215,4 +225,4 @@ def Exp3(student,T,R_table_model,alpha_c_hat,gamma,compute_regret=False):
         
 
     
-    return reward_list,regret_list,activity_list,c_hat,c_true,w_a_history
+    return reward_list,regret_list,activity_list,c_hat,c_true,w_a_history,best_activity_list,correct_answers

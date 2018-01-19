@@ -33,7 +33,8 @@ def predefined_sequence(student,R_table_model,T):
     
     activity_list = -1*np.ones((T,n_p))
     answer_list=[[],[],[],[],[],[],[],[],[],[]]
-
+    
+    correct_answers = np.zeros(T)
     
     for t in range(T-1):
         
@@ -44,6 +45,7 @@ def predefined_sequence(student,R_table_model,T):
         ## return anwser of the student and update its true competence
         answer = student.exercize(a) 
         c_true[:,t+1]=student.KC
+        correct_answers[t] = 1*(answer)
             
         answer_list[stage].append(answer)
         
@@ -62,6 +64,6 @@ def predefined_sequence(student,R_table_model,T):
             
     
 
-    return activity_list[:-1],c_true,answer_list
+    return activity_list[:-1],c_true,correct_answers
         
         

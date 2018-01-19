@@ -39,6 +39,7 @@ class Student():
         self.n_c=R_table_model.n_c
         self.n_p=R_table_model.n_p
         
+        self.lambdas = lambdas
         self.possible_activities=R_table_model.enumerate_activities()
 
         
@@ -68,8 +69,19 @@ class Student():
 
         
     def get_lambdas(self,activity):
-        # TODO
-        return 1
+        
+        res=1
+        if (self.lambdas is None):
+            res = 1
+        else:
+            for act in self.lambdas:
+                if np.all(np.equal(act,activity)):
+                    
+                    return 0
+                
+        return res
+        
+        
     
     def get_best_activity(self):
         """
